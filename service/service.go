@@ -1,17 +1,18 @@
 package service
 
 import (
-	"crypto/sha256"
-	"encoding/json"
-	"fmt"
-	"os"
-	"time"
+    "crypto/sha256"
+    "encoding/json"
+    "fmt"
+    "os"
+    "strings"
+    "time"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+    "github.com/aws/aws-lambda-go/events"
+    "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/awserr"
+    "github.com/aws/aws-sdk-go/aws/session"
+    "github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
 type Bug struct {
@@ -57,24 +58,30 @@ func convertLevelFromString(s string) LogLevel {
 }
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	if request.Resource != "bug" {
-		return events.APIGatewayProxyResponse{}, fmt.Errorf("unknown endpoint")
+	if request.Path != "/bug" {
+		return events.APIGatewayProxyResponse{}, fmt.Errorf("unknown endpoint: %+v", request)
 	}
 
 	agent := ""
-	if request.Headers["X-API-ID"] != "" {
-		agent = request.Headers["X-API-ID"]
-	}
-	if request.Headers["x-api-id"] != "" {
-		agent = request.Headers["x-api-id"]
-	}
-
+	for h, v := range request.Headers {
+	    hl := strings.ToLower(h)
+	    if hl == "x-api-id" {
+	        agent = v
+        }
+    }
 	if agent == "" {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Body:       "",
-		}, fmt.Errorf("no agent")
+		}, fmt.Errorf("no agent: %+v", request.Headers)
 	}
+
+	if len(request.Body) == 0 {
+	    return events.APIGatewayProxyResponse{
+	        StatusCode: 200,
+	        Body: "",
+        }, fmt.Errorf("no body: %+v", request)
+    }
 
 	err := FileBug(agent, request.Body)
 	if err != nil {
