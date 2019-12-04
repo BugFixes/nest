@@ -26,16 +26,19 @@ Resources:
   Dynamo:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Join ['-', [!Ref ServiceName, dynamo, !Ref Environment]]
       AttributeDefinitions:
         - AttributeName: identifier
           AttributeType: S
+      BillingMode: PROVISIONED
       KeySchema:
         - AttributeName: identifier
           KeyType: HASH
       ProvisionedThroughput:
-        WriteCapacityUnits: 5
         ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      TableName: !Join ['-', [!Ref ServiceName, dynamo, !Ref Environment]]
 
   AuthorizerRole:
     Type: AWS::IAM::Role
@@ -155,6 +158,7 @@ Resources:
     DependsOn: RestAPIResourceProbeGet
     Properties:
       RestApiId: !Ref RestAPI
+      StageName: !Ref Stage
 
   RestAPIStage:
     Type: AWS::ApiGateway::Stage
