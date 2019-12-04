@@ -15,30 +15,31 @@ import (
 )
 
 type Bug struct {
-	Message string `json:"message"`
+	Message  string `json:"message"`
 	LogLevel string `json:"loglevel"`
 
 	Agent string
 
-	Level LogLevel
-	Hash string
+	Level      LogLevel
+	Hash       string
 	Identifier string
-	Time time.Time
+	Time       time.Time
 }
 
 const (
-	LogLevelInfo LogLevel = "info"
-	LogLevelLog LogLevel = "log"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelLog   LogLevel = "log"
 	LogLevelError LogLevel = "error"
 )
+
 type LogLevel string
 
 func convertLevelToString(l LogLevel) string {
 	switch l {
-		case LogLevelInfo:
-			return "info"
-		case LogLevelLog:
-			return "log"
+	case LogLevelInfo:
+		return "info"
+	case LogLevelLog:
+		return "log"
 	}
 
 	return "error"
@@ -46,10 +47,10 @@ func convertLevelToString(l LogLevel) string {
 
 func convertLevelFromString(s string) LogLevel {
 	switch s {
-		case "info":
-			return LogLevelInfo
-		case "log":
-			return LogLevelLog
+	case "info":
+		return LogLevelInfo
+	case "log":
+		return LogLevelLog
 	}
 
 	return LogLevelError
@@ -71,7 +72,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	if agent == "" {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
-			Body: "",
+			Body:       "",
 		}, fmt.Errorf("no agent")
 	}
 
@@ -82,8 +83,8 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 
 	return events.APIGatewayProxyResponse{
-		StatusCode: 200, 
-		Body: "bug stored",
+		StatusCode: 200,
+		Body:       "bug stored",
 	}, nil
 }
 
@@ -97,17 +98,17 @@ func FileBug(agent string, body string) error {
 	b.Time = time.Now()
 	b.Agent = agent
 
-	b, err = b.generateHash()
+	b, err = b.GenerateHash()
 	if err != nil {
 		return fmt.Errorf("generateHash: %w", err)
 	}
 
-	b, err = b.generateIdentifier()
+	b, err = b.GenerateIdentifier()
 	if err != nil {
 		return fmt.Errorf("generateidentifier: %w", err)
 	}
 
-	err = b.store()
+	err = b.Store()
 	if err != nil {
 		return fmt.Errorf("store: %w", err)
 	}
@@ -115,9 +116,13 @@ func FileBug(agent string, body string) error {
 	return nil
 }
 
-func (b Bug)store() error {
+func (b Bug) Store() error {
+	if b.Hash == "" {
+		return fmt.Errorf("no hash given")
+	}
+
 	s, err := session.NewSession(&aws.Config{
-		Region: aws.String(os.Getenv("DB_REGION")),
+		Region:   aws.String(os.Getenv("DB_REGION")),
 		Endpoint: aws.String(os.Getenv("DB_ENDPOINT")),
 	})
 	if err != nil {
@@ -149,12 +154,12 @@ func (b Bug)store() error {
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
-				case dynamodb.ErrCodeConditionalCheckFailedException:
-					return fmt.Errorf("inputerr errcode: %w", err)
-				case "ValidationException":
-					return fmt.Errorf("inputerr validaton: %w", err)
-				default:
-					return fmt.Errorf("inputerr unknown: %w", err)
+			case dynamodb.ErrCodeConditionalCheckFailedException:
+				return fmt.Errorf("inputerr errcode: %w", err)
+			case "ValidationException":
+				return fmt.Errorf("inputerr validaton: %w", err)
+			default:
+				return fmt.Errorf("inputerr unknown: %w", err)
 			}
 		}
 	}
@@ -162,16 +167,15 @@ func (b Bug)store() error {
 	return nil
 }
 
-func (b Bug)generateIdentifier() (Bug, error) {
+func (b Bug) GenerateIdentifier() (Bug, error) {
 	pre := fmt.Sprintf("%s%d", b.Agent, b.Time.Unix())
-	b.Identifier = fmt.Sprintf("%v", sha256.Sum256([]byte(pre)))
+	b.Identifier = fmt.Sprintf("%x", sha256.Sum256([]byte(pre)))
 
 	return b, nil
 }
 
-func (b Bug)generateHash() (Bug, error) {
-	b.Hash = fmt.Sprintf("%v", sha256.Sum256([]byte(b.Message)))
+func (b Bug) GenerateHash() (Bug, error) {
+	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(b.Message)))
 
 	return b, nil
 }
-
