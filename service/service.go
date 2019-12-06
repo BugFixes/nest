@@ -1,20 +1,21 @@
 package service
 
 import (
-    "crypto/sha256"
-    "encoding/json"
-    "fmt"
-    "os"
-    "strings"
-    "time"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+	"time"
 
-    "github.com/aws/aws-lambda-go/events"
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/awserr"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
+// Bug ...
 type Bug struct {
 	Message  string `json:"message"`
 	LogLevel string `json:"loglevel"`
@@ -28,11 +29,17 @@ type Bug struct {
 }
 
 const (
-	LogLevelInfo  LogLevel = "info"
-	LogLevelLog   LogLevel = "log"
+	// LogLevelInfo ...
+	LogLevelInfo LogLevel = "info"
+
+	// LogLevelLog ...
+	LogLevelLog LogLevel = "log"
+
+	// LogLevelError ...
 	LogLevelError LogLevel = "error"
 )
 
+// LogLevel ...
 type LogLevel string
 
 func convertLevelToString(l LogLevel) string {
@@ -57,6 +64,7 @@ func convertLevelFromString(s string) LogLevel {
 	return LogLevelError
 }
 
+// Handler ...
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	if request.Path != "/bug" {
 		return events.APIGatewayProxyResponse{}, fmt.Errorf("unknown endpoint: %+v", request)
@@ -64,11 +72,11 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	agent := ""
 	for h, v := range request.Headers {
-	    hl := strings.ToLower(h)
-	    if hl == "x-api-id" {
-	        agent = v
-        }
-    }
+		hl := strings.ToLower(h)
+		if hl == "x-api-id" {
+			agent = v
+		}
+	}
 	if agent == "" {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
@@ -77,11 +85,11 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 
 	if len(request.Body) == 0 {
-	    return events.APIGatewayProxyResponse{
-	        StatusCode: 200,
-	        Body: "",
-        }, fmt.Errorf("no body: %+v", request)
-    }
+		return events.APIGatewayProxyResponse{
+			StatusCode: 200,
+			Body:       "",
+		}, fmt.Errorf("no body: %+v", request)
+	}
 
 	err := FileBug(agent, request.Body)
 	if err != nil {
@@ -95,6 +103,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}, nil
 }
 
+// FileBug add the bug to the system
 func FileBug(agent string, body string) error {
 	b := Bug{}
 	err := json.Unmarshal([]byte(body), &b)
@@ -123,6 +132,7 @@ func FileBug(agent string, body string) error {
 	return nil
 }
 
+// Store inject into db
 func (b Bug) Store() error {
 	if b.Hash == "" {
 		return fmt.Errorf("no hash given")
@@ -174,6 +184,7 @@ func (b Bug) Store() error {
 	return nil
 }
 
+// GenerateIdentifier ...
 func (b Bug) GenerateIdentifier() (Bug, error) {
 	pre := fmt.Sprintf("%s%d", b.Agent, b.Time.Unix())
 	b.Identifier = fmt.Sprintf("%x", sha256.Sum256([]byte(pre)))
@@ -181,6 +192,7 @@ func (b Bug) GenerateIdentifier() (Bug, error) {
 	return b, nil
 }
 
+// GenerateHash ...
 func (b Bug) GenerateHash() (Bug, error) {
 	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(b.Message)))
 
