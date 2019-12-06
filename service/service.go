@@ -93,7 +93,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	err := FileBug(agent, request.Body)
 	if err != nil {
-		fmt.Printf("%v err: %v\n", request.Resource, err)
+		fmt.Printf("%+v err: %+v\n", request.Resource, err)
 		return events.APIGatewayProxyResponse{}, err
 	}
 
