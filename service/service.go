@@ -104,7 +104,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 }
 
 // FileBug add the bug to the system
-func FileBug(agent string, body string) error {
+func FileBug(agent, body string) error {
 	b := Bug{}
 	err := json.Unmarshal([]byte(body), &b)
 	if err != nil {
