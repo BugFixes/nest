@@ -3,10 +3,20 @@
 STACK_NAME=nest
 BUILD_BUCKET=builds
 
-rm ${STACK_NAME}
-rm ${STACK_NAME}.zip
+removeFiles()
+{
+  if [[ -f "${STACK_NAME}.zip" ]]; then
+    rm ${STACK_NAME}
+    rm ${STACK_NAME}.zip
+  fi
+}
+
+removeFiles
 
 GOOS=linux GOARCH=amd64 go build .
+if [[ ! -f "${STACK_NAME}" ]];then
+  exit "build failed"
+fi
 zip ${STACK_NAME}.zip ${STACK_NAME}
 
 BUCKET_EXISTS=$(aws --region us-east-1 --endpoint-url http://localhost:4572 s3api list-buckets | jq '.Buckets[].Name//empty' | grep "${BUILD_BUCKET}")
@@ -54,4 +64,7 @@ else
 		  ParameterKey=DomainName,ParameterValue=api.docker.devel
 fi
 
+go test ./...
+go test ./... -bench=.
 
+removeFiles
