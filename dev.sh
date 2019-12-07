@@ -20,13 +20,13 @@ fi
 zip ${STACK_NAME}.zip ${STACK_NAME}
 
 BUCKET_EXISTS=$(aws --region us-east-1 --endpoint-url http://localhost:4572 s3api list-buckets | jq '.Buckets[].Name//empty' | grep "${BUILD_BUCKET}")
-if [[ -z "${BUCKET_EXSISTS}" ]] || [[ "${BUCKET_EXISTS}" == "" ]]; then
+if [[ -z "${BUCKET_EXISTS}" ]] || [[ "${BUCKET_EXISTS}" == "" ]]; then
   aws --region us-east-1 --endpoint-url http://localhost:4572 s3api create-bucket --bucket ${BUILD_BUCKET}
 fi
 
 AUTH_ARN=unknown
 AUTH_EXISTS=$(aws --region us-east-1 --endpoint-url http://localhost:4574 lambda list-functions | jq '.Functions[].FunctionArn//empty' | grep "authorizer-lambda-dev")
-if [[ "${AUTH_EXISTS}" ]] || [[ "${AUTH_EXISTS}" != "" ]]; then	
+if [[ "${AUTH_EXISTS}" ]] || [[ "${AUTH_EXISTS}" != "" ]]; then
   AUTH_ARN=$(sed -e 's/^"//' -e 's/"$//' <<< ${AUTH_EXISTS})
 fi
 
@@ -65,6 +65,6 @@ else
 fi
 
 go test ./...
-go test ./... -bench=.
+go test ./... -bench=. -run=$$$
 
 removeFiles
