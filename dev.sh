@@ -15,7 +15,8 @@ removeFiles
 
 GOOS=linux GOARCH=amd64 go build .
 if [[ ! -f "${STACK_NAME}" ]];then
-  exit "build failed"
+  echo "build failed"
+  exit 1
 fi
 zip ${STACK_NAME}.zip ${STACK_NAME}
 
@@ -46,7 +47,8 @@ if [[ -z "${STACK_EXISTS}" ]] || [[ "${STACK_EXISTS}" == "" ]]; then
 		  ParameterKey=AuthorizerARN,ParameterValue=${AUTH_ARN} \
 		  ParameterKey=CertificateARN,ParameterValue=tester \
 		  ParameterKey=DNSZoneName,ParameterValue=docker.devel \
-		  ParameterKey=DomainName,ParameterValue=api.docker.devel
+		  ParameterKey=DomainName,ParameterValue=api.docker.devel \
+		  ParameterKey=DBEndpoint,ParameterValue=http://10.254.254.254:4569
 else
   aws --region us-east-1 --endpoint-url http://localhost:4572 s3 cp ./${STACK_NAME}.zip s3://${BUILD_BUCKET}/${STACK_NAME}.zip
   aws --region us-east-1 --endpoint-url http://localhost:4581 cloudformation update-stack \
@@ -61,7 +63,8 @@ else
 		  ParameterKey=AuthorizerARN,ParameterValue=${AUTH_ARN} \
 		  ParameterKey=CertificateARN,ParameterValue=tester \
 		  ParameterKey=DNSZoneName,ParameterValue=docker.devel \
-		  ParameterKey=DomainName,ParameterValue=api.docker.devel
+		  ParameterKey=DomainName,ParameterValue=api.docker.devel \
+		  ParameterKey=DBEndpoint,ParameterValue=http://10.254.254.254:4569
 fi
 
 go test ./...

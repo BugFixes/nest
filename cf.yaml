@@ -21,8 +21,16 @@ Parameters:
     Type: String
   BuildKey:
     Type: String
+  DBEndpoint:
+    Type: String
+    Default: !Join ['', ['http://', 'dynamodb.', !Ref 'AWS::Region', '.amazonaws.com']]
 
 Resources:
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Join['-', [!Ref ServiceName, sqs, !Ref Environment]]
+
   Dynamo:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -245,8 +253,8 @@ Resources:
       Timeout: 10
       Environment:
         Variables:
-          DB_TABLE: !Ref Dynamo
-          DB_ENDPOINT: !Join ['', ['http://', 'dynamodb.', !Ref 'AWS::Region', '.amazonaws.com']]
+          DB_TABLE: !Join ['-', [!Ref ServiceName, dynamo, !Ref Environment]]
+          DB_ENDPOINT: !Ref DBEndpoint
           DB_REGION: !Ref AWS::Region
       Code:
         S3Bucket: !Ref BuildBucket
