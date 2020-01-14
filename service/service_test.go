@@ -1,32 +1,35 @@
 package service_test
 
 import (
-	"testing"
+  "os"
+  "testing"
 
-	"github.com/bugfixes/nest/service"
-	"github.com/joho/godotenv"
-	"github.com/stretchr/testify/assert"
+  "github.com/bugfixes/nest/service"
+  "github.com/joho/godotenv"
+  "github.com/stretchr/testify/assert"
 )
 
 func TestFileBug(t *testing.T) {
-	err := godotenv.Load()
-	if err != nil {
-		t.Errorf("godotenv: %w", err)
+	if os.Getenv("GITHUB_ACTOR") == "" {
+		err := godotenv.Load()
+		if err != nil {
+			t.Errorf("TestFileBug godotenv err: %w", err)
+		}
 	}
 
 	tests := []struct {
-		name string
-		body string
-		err  error
+		agent string
+		body  string
+		err   error
 	}{
 		{
-			name: "test",
-			body: `{"message":"tester","loglevel":"info"}`,
+			agent: "42e14f47-323f-40e6-883e-f552425a3983",
+			body:  `{"message":"tester","loglevel":"info"}`,
 		},
 	}
 
 	for _, test := range tests {
-		err := service.FileBug(test.name, test.body)
+		_, err := service.FileBug(test.agent, test.body)
 		passed := assert.IsType(t, test.err, err)
 		if !passed {
 			t.Errorf("service test: %w", err)
@@ -35,19 +38,23 @@ func TestFileBug(t *testing.T) {
 }
 
 func TestGenerateHash(t *testing.T) {
-	err := godotenv.Load()
-	if err != nil {
-		t.Errorf("godotenv: %w", err)
+	if os.Getenv("GITHUB_ACTOR") == "" {
+		err := godotenv.Load()
+		if err != nil {
+			t.Errorf("TestGenerateHash godotenv err: %w", err)
+		}
 	}
 
 	tests := []struct {
+		name   string
 		bug    service.Bug
 		expect string
 		err    error
 	}{
 		{
+			name: "hash info tester",
 			bug: service.Bug{
-				Agent:    "tester",
+				Agent:    "42e14f47-323f-40e6-883e-f552425a3983",
 				LogLevel: "info",
 				Message:  "tester",
 			},
@@ -56,49 +63,16 @@ func TestGenerateHash(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		resp, err := test.bug.GenerateHash()
-		passed := assert.IsType(t, test.err, err)
-		if !passed {
-			t.Errorf("generatehash err: %w", err)
-		}
-		passed = assert.Equal(t, test.expect, resp.Hash)
-		if !passed {
-			t.Errorf("generatehash: %w", err)
-		}
-	}
-}
-
-func TestStoreBug(t *testing.T) {
-	err := godotenv.Load()
-	if err != nil {
-		t.Errorf("godotenv: %w", err)
-	}
-
-	tests := []struct {
-		bug service.Bug
-		err error
-	}{
-		{
-			bug: service.Bug{
-				Agent:    "tester",
-				LogLevel: "info",
-				Message:  "tester",
-				Hash:     "9bba5c53a0545e0c80184b946153c9f58387e3bd1d4ee35740f29ac2e718b019",
-			},
-		},
-	}
-
-	for _, test := range tests {
-		b, err := test.bug.GenerateIdentifier()
-		passed := assert.IsType(t, test.err, err)
-		if !passed {
-			t.Errorf("generateident: %w", err)
-		}
-
-		err = b.Store()
-		passed = assert.IsType(t, test.err, err)
-		if !passed {
-			t.Errorf("store test: %w", err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			resp, err := test.bug.GenerateHash()
+			passed := assert.IsType(t, test.err, err)
+			if !passed {
+				t.Errorf("generatehash err: %w", err)
+			}
+			passed = assert.Equal(t, test.expect, resp.Hash)
+			if !passed {
+				t.Errorf("generatehash: %w", err)
+			}
+		})
 	}
 }

@@ -15,21 +15,19 @@ Parameters:
     Default: v1
   CertificateARN:
     Type: String
+    Default: tester
   DNSZoneName:
     Type: String
   BuildBucket:
     Type: String
   BuildKey:
     Type: String
-  DBEndpoint:
-    Type: String
-    Default: !Join ['', ['http://', 'dynamodb.', !Ref 'AWS::Region', '.amazonaws.com']]
 
 Resources:
   Queue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Join['-', [!Ref ServiceName, sqs, !Ref Environment]]
+      QueueName: !Join ['-', [!Ref ServiceName, sqs, !Ref Environment]]
 
   Dynamo:
     Type: AWS::DynamoDB::Table
@@ -73,13 +71,13 @@ Resources:
   Authorizer:
     Type: AWS::ApiGateway::Authorizer
     Properties:
-      Name: !Join ['-', [!Ref ServiceName, authorizer, !Ref Environment]]
-      RestApiId: !Ref RestAPI
       AuthorizerCredentials: !GetAtt AuthorizerRole.Arn
       AuthorizerResultTtlInSeconds: 0
-      AuthorizerUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthorizerARN}/invocations
+      AuthorizerUri: !Join ['', ['arn:aws:apigateway:', !Ref 'AWS::Region', ':lambda:path/2015/03/31/functions/', !Ref AuthorizerARN, '/invocations']]
       Type: REQUEST
       IdentitySource: method.request.header.X-Authorization
+      Name: !Join ['-', [!Ref ServiceName, authorizer, !Ref Environment]]
+      RestApiId: !Ref RestAPI
 
   RestAPI:
     Type: AWS::ApiGateway::RestApi
@@ -99,6 +97,9 @@ Resources:
         $schema: 'http://json-schema.org/draft-04/schema#'
         title: Empty
         type: object
+        properties:
+          id:
+            type: string
 
   RestAPIResourceProbe:
     Type: AWS::ApiGateway::Resource
@@ -106,6 +107,7 @@ Resources:
       RestApiId: !Ref RestAPI
       ParentId: !GetAtt RestAPI.RootResourceId
       PathPart: probe
+
   RestAPIResourceProbeGet:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -121,11 +123,11 @@ Resources:
             {"statusCode": 200}
         IntegrationResponses:
           - StatusCode: 200
-            ResponseTemplates:
-              application/json: |
-                {}
-      MethodResponses:
-        - StatusCode: 200
+        ResponseTemplates:
+          application/json: |
+            {}
+        MethodResponses:
+          - StatusCode: 200
 
   RestAPIBug:
     Type: AWS::ApiGateway::Resource
@@ -133,6 +135,7 @@ Resources:
       RestApiId: !Ref RestAPI
       ParentId: !GetAtt RestAPI.RootResourceId
       PathPart: bug
+
   RestAPIBugPost:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -153,8 +156,7 @@ Resources:
             application/json: !Ref EmptyModel
       Integration:
         Type: AWS_PROXY
-        Uri: !Sub >-
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Service.Arn}/invocations
+        Uri: !Join ['', ['arn:aws:apigateway:', !Ref 'AWS::Region', ':lambda:path/2015-03-31/functions/', !GetAtt Service.Arn, '/invocations']]
         IntegrationHttpMethod: POST
         IntegrationResponses:
           - StatusCode: 200
@@ -168,21 +170,11 @@ Resources:
       RestApiId: !Ref RestAPI
       StageName: !Ref Stage
 
-  RestAPIStage:
-    Type: AWS::ApiGateway::Stage
-    Properties:
-      RestApiId: !Ref RestAPI
-      StageName: !Ref Stage
-      DeploymentId: !Ref RestAPIDeployment
-
   RestAPIDomainName:
     Type: AWS::ApiGateway::DomainName
     Properties:
       DomainName: !Ref DomainName
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      RegionalCertificateArn: !Ref CertificateARN
+      CertificateArn: !Ref CertificateARN
 
   RestAPIDomainMapping:
     Type: AWS::ApiGateway::BasePathMapping
@@ -190,7 +182,7 @@ Resources:
       BasePath: !Ref Stage
       DomainName: !Ref RestAPIDomainName
       RestApiId: !Ref RestAPI
-      Stage: !Ref RestAPIStage
+      Stage: !Ref Stage
 
   PrimaryRecordSet:
     Type: AWS::Route53::RecordSet
@@ -212,12 +204,12 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
       Policies:
         - PolicyName: lambda
           PolicyDocument:
@@ -243,6 +235,7 @@ Resources:
                   - dynamodb:PurchaseReservedCapacityOfferings
                   - dynamodb:DescribeLimits
                   - dynamodb:ListStreams
+
   Service:
     Type: AWS::Lambda::Function
     Properties:
@@ -254,7 +247,8 @@ Resources:
       Environment:
         Variables:
           DB_TABLE: !Join ['-', [!Ref ServiceName, dynamo, !Ref Environment]]
-          DB_ENDPOINT: !Ref DBEndpoint
+#          DB_TABLE: !Ref Dynamo
+          DB_ENDPOINT: !Join ['', ['http://', 'dynamodb.', !Ref 'AWS::Region', '.amazonaws.com']]
           DB_REGION: !Ref AWS::Region
       Code:
         S3Bucket: !Ref BuildBucket
@@ -266,5 +260,5 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt Service.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPI}/*/POST/bug
+      SourceArn: !Join ['', ['arn:aws:execute-api:', !Ref 'AWS::Region', ':', !Ref 'AWS::AccountId', ':', !Ref RestAPI, '/*/POST/bug']]
 
