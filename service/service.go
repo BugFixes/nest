@@ -1,15 +1,15 @@
 package service
 
 import (
-  "crypto/sha256"
-  "fmt"
-  "os"
-  "time"
+	"crypto/sha256"
+	"fmt"
+	"os"
+	"time"
 
-  "github.com/aws/aws-lambda-go/events"
-  "github.com/bugfixes/agent"
-  _ "github.com/lib/pq" // drivers are usually blank
-  uuid "github.com/satori/go.uuid"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/bugfixes/agent"
+	_ "github.com/lib/pq" // drivers are usually blank
+	uuid "github.com/satori/go.uuid"
 )
 
 // Bug ...
