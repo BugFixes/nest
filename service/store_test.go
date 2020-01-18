@@ -34,6 +34,11 @@ func TestBug_Store(t *testing.T) {
   }
 
   for _, test := range tests {
+    err := injectAgent(test.bug.Agent)
+    if err != nil {
+      t.Errorf("%v inject: %w", test.name, err)
+    }
+
     t.Run(test.name, func(t *testing.T) {
       b, err := test.bug.GenerateIdentifier()
       passed := assert.IsType(t, test.err, err)
@@ -47,6 +52,11 @@ func TestBug_Store(t *testing.T) {
         t.Errorf("store test: %w", err)
       }
     })
+
+    err = deleteAgent(test.bug.Agent)
+    if err != nil {
+      t.Errorf("%v delete: %w", test.name, err)
+    }
   }
 }
 
@@ -60,12 +70,14 @@ func TestCreateBug(t *testing.T) {
 
   tests := []struct {
     name     string
+    agent    string
     request  events.APIGatewayProxyRequest
     response service.Response
     err      error
   }{
     {
       name: "create basic bug",
+      agent: "42e14f47-323f-40e6-883e-f552425a3983",
       request: events.APIGatewayProxyRequest{
         Resource:   "/bug",
         HTTPMethod: "POST",
@@ -78,6 +90,11 @@ func TestCreateBug(t *testing.T) {
   }
 
   for _, test := range tests {
+    err := injectAgent(test.agent)
+    if err != nil {
+      t.Errorf("%v inject: %w", test.name, err)
+    }
+
     t.Run(test.name, func(t *testing.T) {
       resp, err := service.CreateBug(test.request)
       passed := assert.IsType(t, test.err, err)
@@ -93,5 +110,10 @@ func TestCreateBug(t *testing.T) {
         t.Errorf("CreateBug response: %+v, %+v", resp, test.response)
       }
     })
+
+    err = deleteAgent(test.agent)
+    if err != nil {
+      t.Errorf("%v delete: %w", test.name, err)
+    }
   }
 }
