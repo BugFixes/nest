@@ -51,7 +51,7 @@ jobs:
           .ci/cloud/cloud.sh setupQueue
       - name: run tests
         env:
-          SQS_REGION=eu-west-2
+          SQS_REGION: eu-west-2
         run: .ci/cloud/cloud.sh testIt
 
   push:
