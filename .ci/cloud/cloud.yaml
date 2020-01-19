@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Nest Service'
+
+Parameters:
+  ServiceName:
+    Type: String
+  Environment:
+    Type: String
+  BuildBucket:
+    Type: String
+  BuildKey:
+    Type: String
+  DBHostname:
+    Type: String
+  DBPort:
+    Type: String
+  DBUsername:
+    Type: String
+  DBPassword:
+    Type: String
+  DBDatabase:
+    Type: String
+  DBTable:
+    Type: String
+  SQSHostname:
+    Type: String
+  SQSQueueName:
+    Type: String
+
+Resources:
+  ServiceARN:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['-', [!Ref ServiceName, role, !Ref Environment]]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principle:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: lambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - rds:*
+                Resource: !Join [':', ['arn', 'aws', 'rds', !Ref 'AWS::Region', !Ref 'AWS::AccountId', !Ref DBDatabase]]
+#              - Effect: Allow
+#                Resource: '*'
+#                Action:
+#                  - rds:DescribeDBInstanceAutomatedBackups
+#                  - rds:DescribeGlobalClusters
+#                  - rds:DescribeEngineDefaultParameters
+#                  - rds:DescribeReservedDBInstanceOfferings
+#                  - rds:DescribeDBClusterSnapshots
+#                  - rds:DescribeDBInstances
+#                  - rds:DescribeOrderableDBInstanceOptions
+#                  - rds:CreateDBProxy
+#                  - rds:DownloadCompleteDBLogFile
+#                  - rds:DescribeDBClusterEndpoints
+#                  - rds:DescribeCertificates
+#                  - rds:DescribeEventCategories
+#                  - rds:DescribeAccountAttributes
+              - Effect: Allow
+                Resource: !Join [':', ['arn', 'aws', 'sqs', !Ref 'AWS::Region', !Ref 'AWS::AccountId', !Ref SQSQueueName]]
+                Action:
+                  - sqs:SendMessage
+  Service:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Join ['-', [!Ref ServiceName, lambda, !Ref Environment]]
+      Role: !GetAtt ServiceARN.Arn
+      Runtime: go1.x
+      Handler: !Ref ServiceName
+      Environment:
+        Variables:
+          DB_HOSTNAME: !Ref DBHostname
+          DB_PASSWORD: !Ref DBPassword
+          DB_DATABASE: !Ref DBDatabase
+          DB_USERNAME: !Ref DBUsername
+          DB_TABLE: !Ref DBTable
+          DB_PORT: !Ref DBPort
+          SQS_HOSTNAME: !Ref SQSHostname
+          SQS_QUEUE: !Ref SQSQueueName
+      Code:
+        S3Bucket: !Ref BuildBucket
+        S3Key: !Ref BuildKey
