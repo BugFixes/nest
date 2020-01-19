@@ -22,8 +22,8 @@ function setupDatabase()
 
   docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=tester -e POSTGRES_USERNAME=postgres -e POSTGRES_DB=postgres --name tester_postgres postgres:11.5
   sleep 5
-  docker exec -e PGPASSWORD=tester tester_postgres psql -c "CREATE TABLE "public"."agent" ("id" uuid, "name" varchar(200), "key" uuid, "secret" uuid, "company_id" uuid, PRIMARY KEY("id"));"
-  docker exec -e PGPASSWORD=tester tester_postgres psql -c "CREATE TABLE "public"."bug" ("id" uuid, "hash" text, "message" text, "agent_id" uuid, "level" int4, "time_posted" timestamp, PRIMARY KEY("id"));"
+  docker exec -e PGPASSWORD=tester tester_postgres psql -U postgres -c "CREATE TABLE "public"."agent" ("id" uuid, "name" varchar(200), "key" uuid, "secret" uuid, "company_id" uuid, PRIMARY KEY("id"));"
+  docker exec -e PGPASSWORD=tester tester_postgres psql -U postgres -c "CREATE TABLE "public"."bug" ("id" uuid, "hash" text, "message" text, "agent_id" uuid, "level" int4, "time_posted" timestamp, PRIMARY KEY("id"));"
 }
 
 function setupQueue()
