@@ -6,6 +6,7 @@ Parameters:
     Type: String
   Environment:
     Type: String
+    Default: dev
   BuildBucket:
     Type: String
   BuildKey:
