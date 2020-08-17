@@ -217,6 +217,8 @@ github.com/aws/aws-sdk-go v1.34.3 h1:pkbLkV9Q/KY86rbV/WG+yzjNektJbjNRdsTNGtNDZcY
 github.com/aws/aws-sdk-go v1.34.3/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/aws/aws-sdk-go v1.34.4 h1:Yx49/+ZMCD9YqIVsO3CsiMs4hnUnokd9otKvWYFjnYw=
 github.com/aws/aws-sdk-go v1.34.4/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
+github.com/aws/aws-sdk-go v1.34.5 h1:FwubVVX9u+kW9qDCjVzyWOdsL+W5wPq683wMk2R2GXk=
+github.com/aws/aws-sdk-go v1.34.5/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/bugfixes/agent v0.0.0-20200105221823-df110d51c6b3 h1:8BUenHE/6d1FfmSR22zLt5MUdc8oe7/YxrG6s6eaqPM=
 github.com/bugfixes/agent v0.0.0-20200105221823-df110d51c6b3/go.mod h1:1tBZ9nrSTvNsHxXA3yrM4WkCbjBYWEB7KvRD7kMpD1E=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
